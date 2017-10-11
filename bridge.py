@@ -12,14 +12,17 @@ import spidev
 import struct
 import random
 
-SPI_SPEED=3000000
-LASER_PIN=9
+# PINS
+LASER_PIN=10
 CONTROLLER1_PIN=7
 CONTROLLER2_PIN=8
-MOTOR_COUNT=15
+
+# OTHER CONFIGS
+SPI_SPEED=3000000
+MOTOR_COUNT=30
 
 
-data = 0x00000000
+
 
 #https://stackoverflow.com/questions/12173774/modify-bits-in-an-integer-in-python
 def set_bit(v, index, x):
@@ -30,8 +33,18 @@ def set_bit(v, index, x):
     v |= mask         # If x was True, set the bit indicated by the mask.
   return v
 
-class Motor:
+class Controller:
+    def __init__(self, name, motorCount, motorStartIndex):
+        self.name = name
+        self.motorCount = motorCount
+        self.motorStartIndex = motorStartIndex
+        self.motors = []
+        for i in range(motorCount):
+            motor = Motor(i + motorStartIndex)
+            self.motors.append(motor)
+            self.motors.randomPosition()
 
+class Motor:
     minPosition = -1000
     maxPosition = 1000
 
@@ -49,27 +62,30 @@ class Motor:
         else:
             data = set_bit(data, self.driveBit, 1)
             if(self.target > self.position):
+                self.position += 1
                 data = set_bit(data, self.directionBit, 1)
             else:
+                self.position -= 1
                 data = set_bit(data, self.directionBit, 0)
         return data
 
     def randomPosition(self):
         self.target = random.randrange(self.minPosition, self.maxPosition)
 
-motors = []
+motors0 = []
+motors1 = []
 
-for i in range(MOTOR_COUNT):
-    motors.append(Motor(i))
-    motors[i].randomPosition()
-    data = motors[i].drive(data)
-
+for i in range(MOTOR_COUNT / 2):
+    motor = Motor(i)
+    motors0.append(motor)
+    motors0.randomPosition()
+    data0 = motor.drive(data0)
 
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(CONTROLLER1_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(CONTROLLER2_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(LASER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(LASER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 spi = spidev.SpiDev()
 spi.open(0, 0)
@@ -101,21 +117,22 @@ def send_positions(x):
         print hex(numb)
     spi.writebytes(splitted)
 
-def laser_detected(x):
-    print "omg laser detected"
+def laser_interrupted(x):
+    print "omg laser interrupted"
 
 GPIO.add_event_detect(CONTROLLER1_PIN, GPIO.RISING, callback=send_positions, bouncetime=300)
 GPIO.add_event_detect(CONTROLLER2_PIN, GPIO.RISING, callback=send_positions, bouncetime=300)
-#GPIO.add_event_detect(LASER_PIN, GPIO.RISING, callback=laser_detected, bouncetime=0)
+GPIO.add_event_detect(LASER_PIN, GPIO.RISING, callback=laser_interrupted, bouncetime=300)
 
 try:
     if __name__ == '__main__':
+        # todo: change this to 127.0.0.1 for production
         app.run(port=port,host="0.0.0.0")
 except KeyboardInterrupt:
-    print "cleanup"
+    print "cleanup after KeyboardInterrupt"
     GPIO.cleanup()
     spi.close()
 except:
-    print "cleanup"
+    print "cleanup after except"
     GPIO.cleanup()
     spi.close()
