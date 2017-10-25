@@ -14,7 +14,7 @@ public:
     std::list<Motor> motors;
 //public:
   Controller(int motorStartIndex, int motorCount);
-  const void drive(unsigned long *data);
+  const void drive(unsigned long *data, int next);
 };
 
 #endif

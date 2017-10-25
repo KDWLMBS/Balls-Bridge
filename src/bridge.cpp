@@ -10,6 +10,8 @@
 #include <bitset>
 #include <list>
 #include <vector>
+#include <chrono>
+#include <thread>
 #include <string>
 #include "motor.hpp"
 #include "controller.hpp"
@@ -21,10 +23,11 @@
 #endif //RPI
 
 Controller controller(0, 15);
+volatile int next = 0;
 
 void interrupt() {
   unsigned long data = 0;
-  controller.drive(&data);
+  controller.drive(&data, next);
   std::vector<unsigned char> byteArr(4);
   for (int i = 0; i < 4; i++) {
     byteArr[3 - i] = (data >> (i * 8));
@@ -55,6 +58,11 @@ int main() {
   #endif //RPI
 
   while(1) {
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    if(next == 1) {
+      next = 0;
+    } else {
+      next = 1;
+    }
   }
 }

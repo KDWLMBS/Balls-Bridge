@@ -6,14 +6,14 @@
 
 class Motor {
 public:
-    unsigned short position;
-    unsigned short target;
+    short position;
+    short target;
     unsigned short enableBit;
     unsigned short directionBit;
     unsigned short index;
 //public:
   Motor(unsigned int index);
-  const void drive(unsigned long *index);
+  const void drive(unsigned long *index, int next);
 };
 
 #endif
