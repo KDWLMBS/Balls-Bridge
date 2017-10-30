@@ -10,7 +10,7 @@ Motor::Motor(unsigned int index) {
   this->index = index;
 }
 
-const void Motor::drive(unsigned long *drive, int next) {
+const void Motor::drive(unsigned long *drive) {
 *drive &= ~(1 << this->enableBit);
 if(next) {
   *drive |= 1 << this->directionBit;

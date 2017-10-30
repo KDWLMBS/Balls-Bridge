@@ -13,6 +13,7 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include <fstream>
 #include "motor.hpp"
 #include "controller.hpp"
 
@@ -22,12 +23,18 @@
 #define INTERRUPT_PIN 0
 #endif //RPI
 
+
+bool fexists(const std::string& filename) {
+  std::ifstream ifile(filename.c_str());
+  return (bool)ifile;
+}
+
 Controller controller(0, 15);
 volatile int next = 0;
 
 void interrupt() {
   unsigned long data = 0;
-  controller.drive(&data, next);
+  controller.drive(&data);
   std::vector<unsigned char> byteArr(4);
   for (int i = 0; i < 4; i++) {
     byteArr[3 - i] = (data >> (i * 8));
@@ -58,11 +65,6 @@ int main() {
   #endif //RPI
 
   while(1) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-    if(next == 1) {
-      next = 0;
-    } else {
-      next = 1;
-    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
 }
