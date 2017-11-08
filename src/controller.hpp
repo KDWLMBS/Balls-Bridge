@@ -11,10 +11,10 @@
 class Controller {
 public:
     int motorCount;
-    std::list<Motor> motors;
+    std::vector<Motor> motors;
 //public:
   Controller(int motorStartIndex, int motorCount);
-  const void drive(unsigned long *data);
+  void drive(unsigned long *data, int next);
 };
 
 #endif
