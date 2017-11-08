@@ -14,6 +14,7 @@
 #include <thread>
 #include <string>
 #include <fstream>
+
 #include <algorithm>
 #include <sstream>
 #include <functional>
@@ -56,6 +57,7 @@ void interrupt() {
   controller.drive(&data, next);
   std::vector<unsigned char> byteArr(4);
   for (int i = 0; i < 4; i++) {
+    //byteArr[3 - i] = 0xff;
     byteArr[3 - i] = (data >> (i * 8));
   }
   unsigned char arr[4];
@@ -63,7 +65,6 @@ void interrupt() {
 
   #if RPI
   wiringPiSPIDataRW (0, arr, 4);
-  std::cout << "w";
   #endif //RPI
 }
 
@@ -98,22 +99,20 @@ int main() {
     //prepare the string
     trim(content);
 
-    //convert it back to a istringstream so we can split it into the numbers
-    std::istringstream is(content);
+    std::string delimiter = " ";
 
+    size_t pos = 0;
+    std::string token;
     int index = 0;
-    //at this point we have the file content ready and can now get the values and set the motor targets
-    while(1) {
-      int n;
-      is >> n;
-      if(!is) {
-        break;
-      }
-      if(index < controller.motors.size()) {
-        controller.motors[index].target = n;
-      }
-      index++;
+    while ((pos = content.find(delimiter)) != std::string::npos) {
+        token = content.substr(0, pos);
+        content.erase(0, pos + delimiter.length());
+        if(index < controller.motors.size()) {
+          controller.motors[index].target = stoi(token);
+        }
+        index++;
     }
+    std::cout << controller.motors[0].position << ">" << controller.motors[0].target << std::endl;
     #endif //RPI
   }
 }

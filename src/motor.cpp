@@ -8,8 +8,8 @@ Motor::Motor(int _index) {
   std::cout << "creating motor " << index << std::endl;
   position = 0;
   target = 0;
-  enableBit = index * 2;
-  directionBit = index * 2 + 1;
+  enableBit = _index * 2;
+  directionBit = _index * 2 + 1;
   index = _index;
 }
 
@@ -19,7 +19,9 @@ void Motor::debug() {
 }
 
 void Motor::drive(unsigned long *drive, int next) {
+  // std::cout << index << "@" << position << "+" << target << std::endl;
   if(position != target) {
+    // std::cout << "drive" << std::endl;
     //set the enable bit to 1
     *drive |= 1 << enableBit;
     //depending on if we are below or above the target position we set the direction bit
