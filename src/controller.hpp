@@ -5,16 +5,17 @@
 #ifndef Controller_H
 #define Controller_H
 
-#define MIN_POSITION -1000
+#define MIN_POSITION (-1000)
 #define MAX_POSITION 1000
 
 class Controller {
 public:
     int motorCount;
     std::vector<Motor> motors;
-//public:
-  Controller(int motorStartIndex, int motorCount);
-  void drive(unsigned long *data, int next);
+
+    Controller(int motorStartIndex, int motorCount);
+
+    void drive(unsigned long *data, int next);
 };
 
 #endif

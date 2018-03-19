@@ -1,14 +1,15 @@
+#include <iostream>
 #include "controller.hpp"
 
 Controller::Controller(int motorStartIndex, int motorCount) {
-  for(int i = motorStartIndex; i <= motorStartIndex + motorCount; i++) {
-    Motor motor(i);
-    motors.push_back(motor);
-  }
+    for (int i = motorStartIndex; i <= motorStartIndex + motorCount - 1; i++) {
+        Motor motor(i);
+        motors.push_back(motor);
+    }
 }
 
 void Controller::drive(unsigned long *data, int next) {
-  for(int i = 0; i < motors.size(); i++) {
-    motors[i].drive(data, next);
-  }
+    for (auto &motor : motors) {
+        motor.drive(data, next);
+    }
 }
