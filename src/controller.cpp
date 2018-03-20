@@ -8,8 +8,8 @@ Controller::Controller(int motorStartIndex, int motorCount) {
     }
 }
 
-void Controller::drive(unsigned long *data, int next) {
+void Controller::drive(uint64_t *data) {
     for (auto &motor : motors) {
-        motor.drive(data, next);
+        motor.drive(data);
     }
 }

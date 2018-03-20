@@ -2,6 +2,8 @@
 #define MOTOR_H
 
 
+#include <cstdint>
+
 class Motor {
 public:
     int position;
@@ -14,7 +16,7 @@ public:
 
     void debug();
 
-    void drive(unsigned long *index, int next);
+    void drive(uint64_t *index);
 };
 
 #endif

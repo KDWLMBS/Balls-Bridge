@@ -15,7 +15,7 @@ public:
 
     Controller(int motorStartIndex, int motorCount);
 
-    void drive(unsigned long *data, int next);
+    void drive(uint64_t *data);
 };
 
 #endif

@@ -43,11 +43,10 @@ static inline void trim(std::string &s) {
 }
 
 Controller controller(0, 30);
-volatile int next = 0;
 
 void interrupt() {
-    unsigned long data = 0;
-    controller.drive(&data, next);
+    uint64_t data = 0;
+    controller.drive(&data);
     std::vector<unsigned char> byteArr(4);
     for (int i = 0; i < 4; i++) {
         //byteArr[3 - i] = 0xff;
