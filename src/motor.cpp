@@ -41,7 +41,7 @@ void Motor::setTarget(int _target) {
 
 void Motor::tick(uint64_t *data) {
     update();
-    if(state != State::IDLE) {
+    if (state != State::IDLE) {
         drive(data);
     }
 
@@ -49,8 +49,8 @@ void Motor::tick(uint64_t *data) {
 
 void Motor::update() {
     //check with a little tolerance if we are at the target
-    if(target - TARGET_TOLERANCE < position && target + TARGET_TOLERANCE > position) {
-        if(velocity == 0) {
+    if (target - TARGET_TOLERANCE < position && target + TARGET_TOLERANCE > position) {
+        if (velocity == 0) {
             state = State::IDLE;
         } else {
             state = State::STOPPING;
@@ -58,6 +58,6 @@ void Motor::update() {
     }
 }
 
-void Motor::drive(uint64_t* data) {
+void Motor::drive(uint64_t *data) {
 
 }

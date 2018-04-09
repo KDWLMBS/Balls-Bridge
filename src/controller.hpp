@@ -6,7 +6,6 @@
 
 class Controller {
 public:
-    int motorCount;
     std::vector<Motor> motors;
 
     Controller(int motorStartIndex, int motorCount);

@@ -21,7 +21,7 @@
 
 enum State {
     //DRIVE = drive at max speed in current direction
-    DRIVING, ACCELERATING, STOPPING, IDLE
+            DRIVING, ACCELERATING, STOPPING, IDLE
 };
 
 class Motor {
@@ -42,7 +42,9 @@ public:
     void debug();
 
     void tick(uint64_t *index);
+
     void update();
+
     void drive(uint64_t *index);
 
     void setTarget(int _target);
