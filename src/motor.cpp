@@ -51,7 +51,7 @@ void Motor::tick(uint64_t *data) {
 
 void Motor::update() {
     //check with a little tolerance if we are at the target
-    if (target - TARGET_TOLERANCE < position && target + TARGET_TOLERANCE > position) {
+    if (abs(target - position) <= TARGET_TOLERANCE) {
         //if we are where we want to be
         if (velocity == 0) {
             //and we are not moving -> IDLE
