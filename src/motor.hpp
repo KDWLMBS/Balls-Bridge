@@ -13,11 +13,16 @@
 //unit: seconds
 #define TIME_TO_VMAX 0.25
 
+#define STEPS_TO_VMAX (VMAX * TIME_TO_VMAX / 2)
+
 //steps from center
 #define MIN_POSITION (-1000)
 
 //steps from center
 #define MAX_POSITION 1000
+
+
+#define ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) (VMAX / (VELOCITY) * STEPS_TO_VMAX)
 
 enum State {
     //DRIVE = drive at max speed in current direction
@@ -26,6 +31,7 @@ enum State {
 
 class Motor {
 public:
+    int stepsSinceAccelerationStart;
     int position;
     int target;
     int pwmBit;

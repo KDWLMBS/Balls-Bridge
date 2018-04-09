@@ -19,6 +19,8 @@ Motor::Motor(int _index) {
 
     velocity = 0;
 
+    stepsSinceAccelerationStart = 0;
+
     isHigh = false;
 
     intervalPartIndex = 0;
@@ -50,11 +52,23 @@ void Motor::tick(uint64_t *data) {
 void Motor::update() {
     //check with a little tolerance if we are at the target
     if (target - TARGET_TOLERANCE < position && target + TARGET_TOLERANCE > position) {
+        //if we are where we want to be
         if (velocity == 0) {
+            //and we are not moving -> IDLE
             state = State::IDLE;
         } else {
+            //but we are moving -> STOP
             state = State::STOPPING;
         }
+    } else if((velocity > 0 && target < position) || (velocity < 0 && target > position)) {
+        //if we are still moving but the wrong way
+        state = State::STOPPING;
+    } else if(velocity == VMAX && ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) < abs(target - position)) {
+        //if we are moving at VMAX and the target is futher away than the stopping distance
+        state = State::DRIVING;
+    } else if(abs(target - position) <= ACCELERATION_DISTANCE_FOR_VELOCITY(velocity)) {
+        //if we are moving but the target is within our acceleration distance
+        state = State::STOPPING;
     }
 }
 
