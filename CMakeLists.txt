@@ -17,4 +17,5 @@ add_executable(bridge ${SOURCE} ${HEADERS})
 add_executable(bridge-rpi ${SOURCE} ${HEADERS})
 
 target_compile_definitions(bridge-rpi PRIVATE RPI=true)
+target_compile_definitions(bridge PRIVATE DEBUG=true)
 target_link_libraries(bridge-rpi wiringPi)

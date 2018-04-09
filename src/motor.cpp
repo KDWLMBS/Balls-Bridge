@@ -1,7 +1,5 @@
 #include "motor.hpp"
-#include <iostream>
-
-#define TARGET_TOLERANCE 10
+#include <cmath>
 
 Motor::Motor(int _index) {
     std::cout << "creating motor " << _index << std::endl;
@@ -21,9 +19,15 @@ Motor::Motor(int _index) {
 
     stepsSinceAccelerationStart = 0;
 
-    isHigh = false;
+    velocityAtAccelerationStart = 0;
 
-    intervalPartIndex = 0;
+    intervalPartDuration = 0;
+
+    intervalPartIsHigh = false;
+
+    shouldUpdate = false;
+
+    intervalPartCounter = 0;
 
     //the bit-index of the pwm bit
     pwmBit = _index * 2;
@@ -42,11 +46,51 @@ void Motor::setTarget(int _target) {
 }
 
 void Motor::tick(uint64_t *data) {
-    update();
-    if (state != State::IDLE) {
-        drive(data);
+    if (state == State::IDLE || shouldUpdate) {
+        update();
     }
+    calculateAccelerationSpeed();
+    drive(data);
+}
 
+float Motor::calculateAccelerationSpeed() {
+    int targetSpeed;
+    if (state == State::ACCELERATING) {
+        targetSpeed = VMAX;
+    } else if (state == State::STOPPING) {
+        targetSpeed = 0;
+    } else {
+        //if we get here we have an error somewhere in the code
+        std::cerr
+                << "state is neither ACCELLERATING NOR STOPPING therefore cannot determine targetSpeed. something is wrong";
+        targetSpeed = 0;
+    }
+    int deltaV = abs(abs(velocityAtAccelerationStart) - targetSpeed);
+    float accelerationPercentage = ((float) velocity - velocityAtAccelerationStart) / deltaV;
+    return (deltaV * accelerationPercentage) + velocityAtAccelerationStart;
+}
+
+void Motor::setState(State _state) {
+    if (state != _state) {
+        switch (_state) {
+            case State::ACCELERATING:
+            case State::STOPPING:
+                velocityAtAccelerationStart = velocity;
+                stepsSinceAccelerationStart = 0;
+                intervalPartCounter = 0;
+                intervalPartIsHigh = false;
+                break;
+            case State::IDLE:
+                stepsSinceAccelerationStart = 0;
+                velocity = 0;
+            case State::DRIVING:
+                stepsSinceAccelerationStart = 0;
+        }
+#ifdef DEBUG
+        std::cout << "state switched to " << STATE_TO_STRING(_state) << std::endl;
+#endif
+        state = _state;
+    }
 }
 
 void Motor::update() {
@@ -55,20 +99,30 @@ void Motor::update() {
         //if we are where we want to be
         if (velocity == 0) {
             //and we are not moving -> IDLE
-            state = State::IDLE;
+            setState(State::IDLE);
         } else {
             //but we are moving -> STOP
-            state = State::STOPPING;
+            setState(State::STOPPING);
         }
-    } else if((velocity > 0 && target < position) || (velocity < 0 && target > position)) {
+    } else if ((velocity > 0 && target < position) || (velocity < 0 && target > position)) {
         //if we are still moving but the wrong way
-        state = State::STOPPING;
-    } else if(velocity == VMAX && ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) < abs(target - position)) {
+#if DEBUG
+        std::cout << "wrong direction -> stopping" << std::endl;
+        setState(State::STOPPING);
+#endif
+    } else if (velocity == VMAX && ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) < abs(target - position)) {
         //if we are moving at VMAX and the target is futher away than the stopping distance
-        state = State::DRIVING;
-    } else if(abs(target - position) <= ACCELERATION_DISTANCE_FOR_VELOCITY(velocity)) {
+        setState(State::DRIVING);
+    } else if (abs(target - position) <= ACCELERATION_DISTANCE_FOR_VELOCITY(velocity)) {
         //if we are moving but the target is within our acceleration distance
-        state = State::STOPPING;
+        setState(State::STOPPING);
+#if DEBUG
+        std::cout << "need to stop, distance to target: " << abs(target - position) << ", acceleration distance: "
+                  << ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) << std::endl;
+        setState(State::STOPPING);
+#endif
+    } else if (abs(target - position) > ACCELERATION_DISTANCE_FOR_VELOCITY(velocity)) {
+        setState(State::ACCELERATING);
     }
 }
 
