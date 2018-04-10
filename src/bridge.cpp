@@ -45,23 +45,23 @@ static inline void trim(std::string &s) {
     rtrim(s);
 }
 
-//Controller controller(0, 30);
-//
-//void interrupt() {
-//    uint64_t data = 0;
-//    controller.drive(&data);
-//    std::vector<unsigned char> byteArr(4);
-//    for (int i = 0; i < 4; i++) {
-//        //byteArr[3 - i] = 0xff;
-//        byteArr[3 - i] = static_cast<unsigned char>(data >> (i * 8));
-//    }
-//    unsigned char arr[4];
-//    std::copy(byteArr.begin(), byteArr.end(), arr);
-//
-//#if RPI
-//    wiringPiSPIDataRW (0, arr, 4);
-//#endif //RPI
-//}
+Controller controller(0, 30);
+
+void interrupt() {
+    uint64_t data = 0;
+    controller.drive(&data);
+    std::vector<unsigned char> byteArr(4);
+    for (int i = 0; i < 4; i++) {
+        //byteArr[3 - i] = 0xff;
+        byteArr[3 - i] = static_cast<unsigned char>(data >> (i * 8));
+    }
+    unsigned char arr[4];
+    std::copy(byteArr.begin(), byteArr.end(), arr);
+
+#if RPI
+    wiringPiSPIDataRW (0, arr, 4);
+#endif //RPI
+}
 
 int main() {
 #if DEBUG
@@ -83,12 +83,6 @@ int main() {
     }
 #endif //RPI
 
-    Motor motor(0);
-    motor.target = 50;
-    motor.velocity = 200;
-    uint64_t data = 0;
-    motor.tick(&data);
-    return 0;
     while (1) {
 #if RPI
         //if we are on a raspberry we read the ballsfile every 100 ms and set the motor positions accordingly
