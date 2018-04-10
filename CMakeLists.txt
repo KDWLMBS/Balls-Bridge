@@ -15,6 +15,8 @@ set(HEADERS
 
 add_executable(bridge ${SOURCE} ${HEADERS})
 add_executable(bridge-rpi ${SOURCE} ${HEADERS})
+add_executable(test-all test/test-motor.cpp )
+add_test( test-all test-all )
 
 target_compile_definitions(bridge-rpi PRIVATE RPI=true)
 target_compile_definitions(bridge PRIVATE DEBUG=true)
