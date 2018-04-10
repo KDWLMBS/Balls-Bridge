@@ -4,39 +4,49 @@
 #include <cstdint>
 #include <iostream>
 
-//this really shouldn't matter
+//we need this in order to calculate the output frequency
+#ifndef ISR_PER_SECOND
 #define ISR_PER_SECOND 4000
+#endif
 
 //unit: steps
+#ifndef TARGET_TOLERANCE
 #define TARGET_TOLERANCE 10
+#endif
 
 //unit: steps / second
+#ifndef VMAX
 #define VMAX 2000
-
-#define MIN_ISR (ISR_PER_SECOND / VMAX / 2)
+#endif
 
 //unit: seconds
+#ifndef TIME_TO_VMAX
 #define TIME_TO_VMAX 0.25
+#endif
+
+//steps from center
+#ifndef MIN_POSITION
+#define MIN_POSITION (-10000)
+#endif
+
+//steps from center
+#ifndef MAX_POSITION
+#define MAX_POSITION 10000
+#endif
 
 //unit: steps
 #define STEPS_TO_VMAX (VMAX * TIME_TO_VMAX / 2)
 
-//steps from center
-#define MIN_POSITION (-10000)
-
-//steps from center
-#define MAX_POSITION 10000
+//unit: steps
+#define CALCULATE_INTERVAL_PART_DURATION(VELOCITY) (ISR_PER_SECOND / (VELOCITY) / 2)
 
 static void printMotorConfiguration() {
-#ifdef DEBUG
     std::cout << "TARGET_TOLERANCE: " << TARGET_TOLERANCE << std::endl;
     std::cout << "VMAX            : " << VMAX << std::endl;
-    std::cout << "MIN_ISR         : " << MIN_ISR << std::endl;
     std::cout << "TIME_TO_VMAX    : " << TIME_TO_VMAX << std::endl;
     std::cout << "STEPS_TO_VMAX   : " << STEPS_TO_VMAX << std::endl;
     std::cout << "MIN_POSITION    : " << MIN_POSITION << std::endl;
     std::cout << "MAX_POSITION    : " << MAX_POSITION << std::endl;
-#endif
 }
 
 
@@ -76,6 +86,9 @@ public:
     int velocity;
     bool intervalPartIsHigh;
     int intervalPartCounter;
+    int intervalPartDuration;
+    bool shouldUpdate;
+
 
     Motor(int index);
 
@@ -90,9 +103,6 @@ public:
     void setTarget(int _target);
 
     void setState(State state);
-
-    int intervalPartDuration;
-    bool shouldUpdate;
 
     float calculateAccelerationSpeed();
 };

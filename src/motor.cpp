@@ -62,7 +62,8 @@ float Motor::calculateAccelerationSpeed() {
     } else {
         //if we get here we have an error somewhere in the code
         std::cerr
-                << "state is neither ACCELLERATING NOR STOPPING therefore cannot determine targetSpeed. something is wrong";
+                << "state is neither ACCELERATING nor STOPPING therefore cannot determine targetSpeed. something is wrong"
+                << std::endl;
         targetSpeed = 0;
     }
     int deltaV = abs(abs(velocityAtAccelerationStart) - targetSpeed);
@@ -72,13 +73,15 @@ float Motor::calculateAccelerationSpeed() {
 
 void Motor::setState(State _state) {
     if (state != _state) {
+        state = _state;
         switch (_state) {
             case State::ACCELERATING:
             case State::STOPPING:
                 velocityAtAccelerationStart = velocity;
                 stepsSinceAccelerationStart = 0;
-                intervalPartCounter = 0;
-                intervalPartIsHigh = false;
+                velocity = static_cast<int>(round(calculateAccelerationSpeed()));
+                intervalPartCounter = CALCULATE_INTERVAL_PART_DURATION(velocity);
+                intervalPartIsHigh = true;
                 break;
             case State::IDLE:
                 stepsSinceAccelerationStart = 0;
@@ -86,10 +89,9 @@ void Motor::setState(State _state) {
             case State::DRIVING:
                 stepsSinceAccelerationStart = 0;
         }
-#ifdef DEBUG
+#if DEBUG
         std::cout << "state switched to " << STATE_TO_STRING(_state) << std::endl;
 #endif
-        state = _state;
     }
 }
 
@@ -98,16 +100,22 @@ void Motor::update() {
     if (abs(target - position) <= TARGET_TOLERANCE) {
         //if we are where we want to be
         if (velocity == 0) {
+#if DEBUG
+            std::cout << "at target and no longer moving -> IDLE" << std::endl;
+#endif
             //and we are not moving -> IDLE
             setState(State::IDLE);
         } else {
             //but we are moving -> STOP
+#if DEBUG
+            std::cout << "at target but still moving, velocity (" << velocity << ") -> STOPPING" << std::endl;
+#endif
             setState(State::STOPPING);
         }
     } else if ((velocity > 0 && target < position) || (velocity < 0 && target > position)) {
         //if we are still moving but the wrong way
 #if DEBUG
-        std::cout << "wrong direction -> stopping" << std::endl;
+        std::cout << "wrong direction -> STOPPING" << std::endl;
         setState(State::STOPPING);
 #endif
     } else if (velocity == VMAX && ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) < abs(target - position)) {
@@ -127,5 +135,40 @@ void Motor::update() {
 }
 
 void Motor::drive(uint64_t *data) {
-
+#if DEBUG
+    std::cout << "drive started" << std::endl;
+#endif
+    if (state == State::ACCELERATING || state == State::STOPPING || state == State::DRIVING) {
+        if (intervalPartIsHigh) {
+            *data |= (1 << pwmBit);
+        } else {
+            *data &= ~(1 << pwmBit);
+        }
+        if (velocity > 0) {
+            *data |= (1 << directionBit);
+        } else {
+            *data &= ~(1 << directionBit);
+        }
+        intervalPartCounter++;
+        if (intervalPartCounter == intervalPartDuration) {
+            if (intervalPartIsHigh) {
+                //we are at the end of the high-cycle -> next time start the low-cycle
+                intervalPartIsHigh = false;
+            } else {
+                //we are at the end of the low-cycle -> update again
+                if (velocity > 0) {
+                    position++;
+                } else if (velocity < 0) {
+                    target--;
+                } else {
+                    std::cerr << "drive cycle has ended but velocity appears to be 0" << std::endl;
+                }
+                shouldUpdate = true;
+            }
+        }
+    } else if (state == State::IDLE) {
+#if DEBUG
+        std::cout << "state is idle, won't do anything" << std::endl;
+#endif
+    }
 }
