@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <cmath>
 
 //we need this in order to calculate the output frequency
 #ifndef ISR_PER_SECOND
@@ -19,6 +20,18 @@
 #define VMAX 2000
 #endif
 
+#ifndef VMIN
+#define VMIN 100
+#endif
+
+#ifndef INTERVAL_PART_DURATION_VMAX
+#define INTERVAL_PART_DURATION_VMAX (round(ISR_PER_SECOND / VMAX / 2))
+#endif
+
+#ifndef INTERVAL_PART_DURATION_VMIN
+#define INTERVAL_PART_DURATION_VMIN (round(ISR_PER_SECOND / VMIN / 2))
+#endif
+
 //unit: seconds
 #ifndef TIME_TO_VMAX
 #define TIME_TO_VMAX 0.25
@@ -26,19 +39,21 @@
 
 //steps from center
 #ifndef MIN_POSITION
-#define MIN_POSITION (-10000)
+#define MIN_POSITION (-1000)
 #endif
 
 //steps from center
 #ifndef MAX_POSITION
-#define MAX_POSITION 10000
+#define MAX_POSITION 1000
 #endif
 
 //unit: steps
 #define STEPS_TO_VMAX (VMAX * TIME_TO_VMAX / 2)
 
 //unit: steps
-#define CALCULATE_INTERVAL_PART_DURATION(VELOCITY) (ISR_PER_SECOND / (VELOCITY) / 2)
+#define CALCULATE_INTERVAL_PART_DURATION(VELOCITY) round((double)(VMAX - (VELOCITY)) / 2000 * (INTERVAL_PART_DURATION_VMIN - INTERVAL_PART_DURATION_VMAX) + INTERVAL_PART_DURATION_VMAX)
+
+#define CALCULATE_ISR_FOR_DELTAV(DELTAV) ((float)(DELTAV) / VMAX * TIME_TO_VMAX * ISR_PER_SECOND)
 
 static void printMotorConfiguration() {
     std::cout << "TARGET_TOLERANCE: " << TARGET_TOLERANCE << std::endl;
@@ -47,6 +62,8 @@ static void printMotorConfiguration() {
     std::cout << "STEPS_TO_VMAX   : " << STEPS_TO_VMAX << std::endl;
     std::cout << "MIN_POSITION    : " << MIN_POSITION << std::endl;
     std::cout << "MAX_POSITION    : " << MAX_POSITION << std::endl;
+    std::cout << "IPD VMAX        : " << INTERVAL_PART_DURATION_VMAX << std::endl;
+    std::cout << "IPD VMIN        : " << INTERVAL_PART_DURATION_VMIN << std::endl;
 }
 
 
@@ -74,7 +91,7 @@ inline const char *STATE_TO_STRING(State s) {
 
 class Motor {
 public:
-    int velocityAtAccelerationStart;
+    float velocityAtAccelerationStart;
     int stepsSinceAccelerationStart;
     int position;
     int target;
@@ -83,7 +100,7 @@ public:
     State state;
     int index;
     bool direction;
-    int velocity;
+    float velocity;
     bool intervalPartIsHigh;
     int intervalPartCounter;
     int intervalPartDuration;

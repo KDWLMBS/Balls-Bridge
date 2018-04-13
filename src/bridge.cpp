@@ -67,6 +67,24 @@ int main() {
 #if DEBUG
     printMotorConfiguration();
 #endif
+    Motor motor(0);
+    motor.target = 20;
+    std::cout << "2000:" << CALCULATE_ISR_FOR_DELTAV(2000) << std::endl;
+    std::cout << "0:" << CALCULATE_ISR_FOR_DELTAV(0) << std::endl;
+    std::cout << "500:" << CALCULATE_ISR_FOR_DELTAV(500) << std::endl;
+    std::cout << "1000:" << CALCULATE_ISR_FOR_DELTAV(1000) << std::endl;
+    return false;
+    for(int i = 0; i < 1000; i++) {
+        uint64_t data = 0;
+        try {
+            motor.tick(&data);
+
+
+        } catch(int e) {
+            std::cerr << "oh no" << e << std::endl;
+        }
+
+    }
     //setup rpi + interruptss
 #if RPI
     if (wiringPiSetup () < 0) {

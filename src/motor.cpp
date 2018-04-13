@@ -1,5 +1,4 @@
 #include "motor.hpp"
-#include <cmath>
 
 Motor::Motor(int _index) {
     std::cout << "creating motor " << _index << std::endl;
@@ -49,12 +48,13 @@ void Motor::tick(uint64_t *data) {
     if (state == State::IDLE || shouldUpdate) {
         update();
     }
-    calculateAccelerationSpeed();
-    drive(data);
+    if (state != State::IDLE) {
+        drive(data);
+    }
 }
 
 float Motor::calculateAccelerationSpeed() {
-    int targetSpeed;
+    float targetSpeed;
     if (state == State::ACCELERATING) {
         targetSpeed = VMAX;
     } else if (state == State::STOPPING) {
@@ -66,32 +66,40 @@ float Motor::calculateAccelerationSpeed() {
                 << std::endl;
         targetSpeed = 0;
     }
-    int deltaV = abs(abs(velocityAtAccelerationStart) - targetSpeed);
-    float accelerationPercentage = ((float) velocity - velocityAtAccelerationStart) / deltaV;
+    float deltaV = std::abs(velocityAtAccelerationStart - targetSpeed);
+    //TODO use ISRs since acceleration start to determine acceleration percentage
+    float accelerationPercentage = (velocity - velocityAtAccelerationStart) / deltaV;
     return (deltaV * accelerationPercentage) + velocityAtAccelerationStart;
 }
 
 void Motor::setState(State _state) {
     if (state != _state) {
-        state = _state;
-        switch (_state) {
-            case State::ACCELERATING:
-            case State::STOPPING:
-                velocityAtAccelerationStart = velocity;
-                stepsSinceAccelerationStart = 0;
-                velocity = static_cast<int>(round(calculateAccelerationSpeed()));
-                intervalPartCounter = CALCULATE_INTERVAL_PART_DURATION(velocity);
-                intervalPartIsHigh = true;
-                break;
-            case State::IDLE:
-                stepsSinceAccelerationStart = 0;
-                velocity = 0;
-            case State::DRIVING:
-                stepsSinceAccelerationStart = 0;
-        }
 #if DEBUG
         std::cout << "state switched to " << STATE_TO_STRING(_state) << std::endl;
 #endif
+    }
+    state = _state;
+    switch (_state) {
+        case State::ACCELERATING:
+        case State::STOPPING:
+            velocityAtAccelerationStart = velocity;
+            stepsSinceAccelerationStart = 0;
+            velocity = calculateAccelerationSpeed();
+            intervalPartCounter = 0;
+            intervalPartDuration = static_cast<int>(CALCULATE_INTERVAL_PART_DURATION(velocity));
+            intervalPartIsHigh = true;
+            if (state == State::STOPPING) {
+                direction = velocity > 0;
+            } else if (state == State::ACCELERATING) {
+                //we cannot check for the velocity here because we might just be starting to accelerate -> velocity would be 0 then
+                direction = target > position;
+            }
+            break;
+        case State::IDLE:
+            stepsSinceAccelerationStart = 0;
+            velocity = 0;
+        case State::DRIVING:
+            stepsSinceAccelerationStart = 0;
     }
 }
 
@@ -144,7 +152,7 @@ void Motor::drive(uint64_t *data) {
         } else {
             *data &= ~(1 << pwmBit);
         }
-        if (velocity > 0) {
+        if (velocity >= 0) {
             *data |= (1 << directionBit);
         } else {
             *data &= ~(1 << directionBit);
@@ -154,15 +162,18 @@ void Motor::drive(uint64_t *data) {
             if (intervalPartIsHigh) {
                 //we are at the end of the high-cycle -> next time start the low-cycle
                 intervalPartIsHigh = false;
+                intervalPartCounter = 0;
             } else {
                 //we are at the end of the low-cycle -> update again
-                if (velocity > 0) {
+                stepsSinceAccelerationStart++;
+                if (direction) {
                     position++;
-                } else if (velocity < 0) {
-                    target--;
                 } else {
-                    std::cerr << "drive cycle has ended but velocity appears to be 0" << std::endl;
+                    target--;
                 }
+#if DEBUG
+                std::cout << "drive cycle end" << std::endl;
+#endif
                 shouldUpdate = true;
             }
         }
