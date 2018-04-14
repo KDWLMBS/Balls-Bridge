@@ -51,9 +51,9 @@
 #define STEPS_TO_VMAX (VMAX * TIME_TO_VMAX / 2)
 
 //unit: steps
-#define CALCULATE_INTERVAL_PART_DURATION(VELOCITY) round((double)(VMAX - (VELOCITY)) / 2000 * (INTERVAL_PART_DURATION_VMIN - INTERVAL_PART_DURATION_VMAX) + INTERVAL_PART_DURATION_VMAX)
+#define CALCULATE_INTERVAL_PART_DURATION(VELOCITY) round((double)(VMAX - (VELOCITY)) / VMAX * (INTERVAL_PART_DURATION_VMIN - INTERVAL_PART_DURATION_VMAX) + INTERVAL_PART_DURATION_VMAX)
 
-#define CALCULATE_ISR_FOR_DELTAV(DELTAV) ((float)(DELTAV) / VMAX * TIME_TO_VMAX * ISR_PER_SECOND)
+#define CALCULATE_ISR_FOR_DELTAV(DELTAV) abs(round((float)(DELTAV) / VMAX * TIME_TO_VMAX * ISR_PER_SECOND))
 
 static void printMotorConfiguration() {
     std::cout << "TARGET_TOLERANCE: " << TARGET_TOLERANCE << std::endl;
@@ -92,7 +92,8 @@ inline const char *STATE_TO_STRING(State s) {
 class Motor {
 public:
     float velocityAtAccelerationStart;
-    int stepsSinceAccelerationStart;
+    int isrSinceAccelerationStart;
+    int isrForAcceleration;
     int position;
     int target;
     int pwmBit;
@@ -122,6 +123,10 @@ public:
     void setState(State state);
 
     float calculateAccelerationSpeed();
+
+    float calculateDeltaV();
+
+    float deltaV;
 };
 
 #endif

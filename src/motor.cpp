@@ -16,8 +16,6 @@ Motor::Motor(int _index) {
 
     velocity = 0;
 
-    stepsSinceAccelerationStart = 0;
-
     velocityAtAccelerationStart = 0;
 
     intervalPartDuration = 0;
@@ -53,7 +51,7 @@ void Motor::tick(uint64_t *data) {
     }
 }
 
-float Motor::calculateAccelerationSpeed() {
+float Motor::calculateDeltaV() {
     float targetSpeed;
     if (state == State::ACCELERATING) {
         targetSpeed = VMAX;
@@ -67,8 +65,11 @@ float Motor::calculateAccelerationSpeed() {
         targetSpeed = 0;
     }
     float deltaV = std::abs(velocityAtAccelerationStart - targetSpeed);
-    //TODO use ISRs since acceleration start to determine acceleration percentage
-    float accelerationPercentage = (velocity - velocityAtAccelerationStart) / deltaV;
+    return deltaV;
+}
+
+float Motor::calculateAccelerationSpeed() {
+    float accelerationPercentage = (float)isrSinceAccelerationStart / isrForAcceleration;
     return (deltaV * accelerationPercentage) + velocityAtAccelerationStart;
 }
 
@@ -78,12 +79,17 @@ void Motor::setState(State _state) {
         std::cout << "state switched to " << STATE_TO_STRING(_state) << std::endl;
 #endif
     }
+    State oldState = state;
     state = _state;
     switch (_state) {
         case State::ACCELERATING:
         case State::STOPPING:
-            velocityAtAccelerationStart = velocity;
-            stepsSinceAccelerationStart = 0;
+            if (oldState != state) {
+                velocityAtAccelerationStart = velocity;
+                isrSinceAccelerationStart = 0;
+                deltaV = calculateDeltaV();
+                isrForAcceleration = CALCULATE_ISR_FOR_DELTAV(deltaV);
+            }
             velocity = calculateAccelerationSpeed();
             intervalPartCounter = 0;
             intervalPartDuration = static_cast<int>(CALCULATE_INTERVAL_PART_DURATION(velocity));
@@ -96,10 +102,9 @@ void Motor::setState(State _state) {
             }
             break;
         case State::IDLE:
-            stepsSinceAccelerationStart = 0;
             velocity = 0;
         case State::DRIVING:
-            stepsSinceAccelerationStart = 0;
+            velocity = VMAX;
     }
 }
 
@@ -147,6 +152,9 @@ void Motor::drive(uint64_t *data) {
     std::cout << "drive started" << std::endl;
 #endif
     if (state == State::ACCELERATING || state == State::STOPPING || state == State::DRIVING) {
+        if(state == State::ACCELERATING || state == State::STOPPING) {
+            isrSinceAccelerationStart++;
+        }
         if (intervalPartIsHigh) {
             *data |= (1 << pwmBit);
         } else {
@@ -165,7 +173,6 @@ void Motor::drive(uint64_t *data) {
                 intervalPartCounter = 0;
             } else {
                 //we are at the end of the low-cycle -> update again
-                stepsSinceAccelerationStart++;
                 if (direction) {
                     position++;
                 } else {
