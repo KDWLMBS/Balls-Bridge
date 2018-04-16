@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <cmath>
+#include <iomanip>
 
 //we need this in order to calculate the output frequency
 #ifndef ISR_PER_SECOND
@@ -56,18 +57,22 @@
 #define CALCULATE_ISR_FOR_DELTAV(DELTAV) abs(round((float)(DELTAV) / VMAX * TIME_TO_VMAX * ISR_PER_SECOND))
 
 static void printMotorConfiguration() {
-    std::cout << "TARGET_TOLERANCE: " << TARGET_TOLERANCE << std::endl;
-    std::cout << "VMAX            : " << VMAX << std::endl;
-    std::cout << "TIME_TO_VMAX    : " << TIME_TO_VMAX << std::endl;
-    std::cout << "STEPS_TO_VMAX   : " << STEPS_TO_VMAX << std::endl;
-    std::cout << "MIN_POSITION    : " << MIN_POSITION << std::endl;
-    std::cout << "MAX_POSITION    : " << MAX_POSITION << std::endl;
-    std::cout << "IPD VMAX        : " << INTERVAL_PART_DURATION_VMAX << std::endl;
-    std::cout << "IPD VMIN        : " << INTERVAL_PART_DURATION_VMIN << std::endl;
+    std::cout << "+-------------------------------+" << std::endl;
+    std::cout << "| Motor Configuration           |" << std::endl;
+    std::cout << "| TARGET_TOLERANCE = " << std::setw(10) << TARGET_TOLERANCE << " |" << std::endl;
+    std::cout << "| VMAX             = " << std::setw(10) << VMAX << " |" << std::endl;
+    std::cout << "| TIME_TO_VMAX     = " << std::setw(10) << TIME_TO_VMAX << " |" << std::endl;
+    std::cout << "| STEPS_TO_VMAX    = " << std::setw(10) << STEPS_TO_VMAX << " |" << std::endl;
+    std::cout << "| MIN_POSITION     = " << std::setw(10) << MIN_POSITION << " |" << std::endl;
+    std::cout << "| MAX_POSITION     = " << std::setw(10) << MAX_POSITION << " |" << std::endl;
+    std::cout << "| IPD VMAX         = " << std::setw(10) << INTERVAL_PART_DURATION_VMAX << " |" << std::endl;
+    std::cout << "| IPD VMIN         = " << std::setw(10) << INTERVAL_PART_DURATION_VMIN << " |" << std::endl;
+    std::cout << "+-------------------------------+" << std::endl;
 }
 
 
-#define ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) ((VELOCITY) == 0 ? 0 : abs(round((abs(VELOCITY) / VMAX) * STEPS_TO_VMAX)))
+#define _ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) ((VELOCITY) == 0 ? 0 : abs(round((abs(VELOCITY) / VMAX) * STEPS_TO_VMAX)) - TARGET_TOLERANCE)
+#define ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) (_ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) > 0 ? _ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) : 0)
 
 enum State {
     //DRIVE = drive at max speed in current direction

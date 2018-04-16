@@ -27,6 +27,9 @@
 #define SPI_FREQUENCY 2000000
 #endif //RPI
 
+#define MOTOR_COUNT 30
+#define BYTES_TO_SEND_COUNT (int)ceil((double)MOTOR_COUNT * 2 / 8)
+
 
 static inline void ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(),
@@ -45,17 +48,17 @@ static inline void trim(std::string &s) {
     rtrim(s);
 }
 
-Controller controller(0, 30);
+Controller controller(0, MOTOR_COUNT);
 
 void interrupt() {
     uint64_t data = 0;
     controller.drive(&data);
-    std::vector<unsigned char> byteArr(4);
-    for (int i = 0; i < 4; i++) {
+    std::vector<uint8_t> byteArr(BYTES_TO_SEND_COUNT);
+    for (int i = 0; i < BYTES_TO_SEND_COUNT; i++) {
         //byteArr[3 - i] = 0xff;
-        byteArr[3 - i] = static_cast<unsigned char>(data >> (i * 8));
+        byteArr[BYTES_TO_SEND_COUNT - 1 - i] = static_cast<uint8_t>(data >> (i * 8));
     }
-    unsigned char arr[4];
+    unsigned char arr[BYTES_TO_SEND_COUNT];
     std::copy(byteArr.begin(), byteArr.end(), arr);
 
 #if RPI
@@ -64,22 +67,24 @@ void interrupt() {
 }
 
 int main() {
+    std::cout << "+-------------------------------+" << std::endl;
+    std::cout << "| Base configuration:           |" << std::endl;
+    std::cout << "| MOTOR_COUNT      = " << std::setw(10) << MOTOR_COUNT << " |" << std::endl;
+    std::cout << "| BYTES_TO_SEND    = " << std::setw(10) << BYTES_TO_SEND_COUNT << " |" << std::endl;
+    std::cout << "+-------------------------------+" << std::endl;
 #if DEBUG
     printMotorConfiguration();
 #endif
     Motor motor(0);
-    motor.target = 20;
-    std::cout << "2000:" << CALCULATE_ISR_FOR_DELTAV(2000) << std::endl;
-    std::cout << "0:" << CALCULATE_ISR_FOR_DELTAV(0) << std::endl;
-    std::cout << "500:" << CALCULATE_ISR_FOR_DELTAV(500) << std::endl;
-    std::cout << "1000:" << CALCULATE_ISR_FOR_DELTAV(1000) << std::endl;
-    for(int i = 0; i < 1000; i++) {
+    motor.target = 1000;
+    for (int i = 0; i < 2000; i++) {
         uint64_t data = 0;
         try {
             motor.tick(&data);
+            std::cout << i << ":" << motor.velocity << "<>" << motor.position << std::endl;
 
 
-        } catch(int e) {
+        } catch (int e) {
             std::cerr << "oh no" << e << std::endl;
         }
 

@@ -1,8 +1,6 @@
 #include "motor.hpp"
 
 Motor::Motor(int _index) {
-    std::cout << "creating motor " << _index << std::endl;
-
     //the number of the motor, useful for debugging
     index = _index;
 
@@ -12,6 +10,7 @@ Motor::Motor(int _index) {
     //the position we want to go to
     target = 0;
 
+    //the state in which the motor is in
     state = State::IDLE;
 
     velocity = 0;
@@ -64,8 +63,7 @@ float Motor::calculateDeltaV() {
                 << std::endl;
         targetSpeed = 0;
     }
-    float deltaV = std::abs(velocityAtAccelerationStart - targetSpeed);
-    return deltaV;
+    return targetSpeed - velocityAtAccelerationStart;
 }
 
 float Motor::calculateAccelerationSpeed() {
@@ -109,6 +107,10 @@ void Motor::setState(State _state) {
 }
 
 void Motor::update() {
+#if DEBUG
+    std::cout << "update started" << std::endl;
+#endif
+    shouldUpdate = false;
     //check with a little tolerance if we are at the target
     if (abs(target - position) <= TARGET_TOLERANCE) {
         //if we are where we want to be
@@ -166,7 +168,7 @@ void Motor::drive(uint64_t *data) {
             *data &= ~(1 << directionBit);
         }
         intervalPartCounter++;
-        if (intervalPartCounter == intervalPartDuration) {
+        if (intervalPartCounter >= intervalPartDuration) {
             if (intervalPartIsHigh) {
                 //we are at the end of the high-cycle -> next time start the low-cycle
                 intervalPartIsHigh = false;
