@@ -66,6 +66,7 @@ void interrupt() {
 #endif //RPI
 }
 
+
 int main() {
     std::cout << "+-------------------------------+" << std::endl;
     std::cout << "| Base configuration:           |" << std::endl;
@@ -75,13 +76,13 @@ int main() {
 #if DEBUG
     printMotorConfiguration();
 #endif
-    Motor motor(0);
+    FixedSpeedMotor motor(0);
     motor.target = 1000;
-    for (int i = 0; i < 2000; i++) {
+    for (int i = 0; i < 4000; i++) {
         uint64_t data = 0;
         try {
             motor.tick(&data);
-            std::cout << i << ":" << motor.velocity << "<>" << motor.position << std::endl;
+            std::cout << "i" << i << ",p" << motor.position << std::endl;
 
 
         } catch (int e) {

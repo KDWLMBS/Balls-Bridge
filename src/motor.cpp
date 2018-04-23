@@ -67,8 +67,8 @@ float Motor::calculateDeltaV() {
 }
 
 float Motor::calculateAccelerationSpeed() {
-    float accelerationPercentage = (float)isrSinceAccelerationStart / isrForAcceleration;
-    return (deltaV * accelerationPercentage) + velocityAtAccelerationStart;
+    float accelerationPercentage = (float) isrSinceAccelerationStart / isrForAcceleration;
+    return velocityAtAccelerationStart + (deltaV * accelerationPercentage);
 }
 
 void Motor::setState(State _state) {
@@ -136,7 +136,7 @@ void Motor::update() {
     } else if (velocity == VMAX && ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) < abs(target - position)) {
         //if we are moving at VMAX and the target is futher away than the stopping distance
         setState(State::DRIVING);
-    } else if (abs(target - position) <= ACCELERATION_DISTANCE_FOR_VELOCITY(velocity)) {
+    } else if (abs(target - position) <= ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) - TARGET_TOLERANCE) {
         //if we are moving but the target is within our acceleration distance
         setState(State::STOPPING);
 #if DEBUG
@@ -144,7 +144,7 @@ void Motor::update() {
                   << ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) << std::endl;
         setState(State::STOPPING);
 #endif
-    } else if (abs(target - position) > ACCELERATION_DISTANCE_FOR_VELOCITY(velocity)) {
+    } else if (abs(target - position) > ACCELERATION_DISTANCE_FOR_VELOCITY(velocity) + TARGET_TOLERANCE) {
         setState(State::ACCELERATING);
     }
 }
@@ -154,7 +154,7 @@ void Motor::drive(uint64_t *data) {
     std::cout << "drive started" << std::endl;
 #endif
     if (state == State::ACCELERATING || state == State::STOPPING || state == State::DRIVING) {
-        if(state == State::ACCELERATING || state == State::STOPPING) {
+        if (state == State::ACCELERATING || state == State::STOPPING) {
             isrSinceAccelerationStart++;
         }
         if (intervalPartIsHigh) {

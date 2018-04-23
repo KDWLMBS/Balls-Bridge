@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cmath>
 #include <iomanip>
+#include "state.hpp"
 
 //we need this in order to calculate the output frequency
 #ifndef ISR_PER_SECOND
@@ -22,7 +23,7 @@
 #endif
 
 #ifndef VMIN
-#define VMIN 100
+#define VMIN 200
 #endif
 
 #ifndef INTERVAL_PART_DURATION_VMAX
@@ -73,26 +74,6 @@ static void printMotorConfiguration() {
 
 #define _ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) ((VELOCITY) == 0 ? 0 : abs(round((abs(VELOCITY) / VMAX) * STEPS_TO_VMAX)) - TARGET_TOLERANCE)
 #define ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) (_ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) > 0 ? _ACCELERATION_DISTANCE_FOR_VELOCITY(VELOCITY) : 0)
-
-enum State {
-    //DRIVE = drive at max speed in current direction
-            DRIVING, ACCELERATING, STOPPING, IDLE
-};
-
-inline const char *STATE_TO_STRING(State s) {
-    switch (s) {
-        case DRIVING:
-            return "DRIVING";
-        case ACCELERATING:
-            return "ACCELERATING";
-        case STOPPING:
-            return "STOPPING";
-        case IDLE:
-            return "IDLE";
-        default:
-            return "[Unknown State]";
-    }
-}
 
 class Motor {
 public:

@@ -4,11 +4,14 @@ set(SOURCE
    ${SOURCE}
    ${CMAKE_CURRENT_SOURCE_DIR}/src/motor.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/bridge.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/fixed-speed-motor.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller.cpp
 )
 set(HEADERS
    ${HEADERS}
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/state.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/motor.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/fixed-speed-motor.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/controller.hpp
 )
 
